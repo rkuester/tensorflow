@@ -103,13 +103,16 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
   TfLiteEvalTensor* output = GetEvalOutput(context, node, kOutputTensor);
 
   switch (value->type) {
+    case kTfLiteInt8:
+      FillImpl<int8_t>(value, output);
+      break;
     case kTfLiteFloat32:
       FillImpl<float>(value, output);
       break;
     default:
       context->ReportError(
           context,
-          "Fill only currently supports float32 for input 1, got %d.",
+          "Fill only currently supports int8 and float32 for input 1, got %d.",
           value->type);
       return kTfLiteError;
   }
