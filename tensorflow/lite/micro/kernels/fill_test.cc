@@ -22,31 +22,46 @@ limitations under the License.
 
 namespace {
 
+using namespace tflite::testing;
+
+struct FillOp {
+  static constexpr int dims_index = 0;
+  static constexpr int value_index = 1;
+  static constexpr int output_index = 2;
+  const int inputs[3] = {2, dims_index, value_index};
+  const int outputs[2] = {1, output_index};
+
+  TfLiteTensor tensors[3];
+  tflite::micro::KernelRunner runner;
+
+  template <typename DimsType, typename ValueType, typename OutputType>
+  FillOp(int* dims_shape, DimsType* dims_data,
+         int* value_shape, ValueType* value_data,
+         int* output_shape, OutputType* output_data)
+  :
+    tensors{
+      CreateTensor(dims_data, IntArrayFromInts(dims_shape)),
+      CreateTensor(value_data, IntArrayFromInts(value_shape)),
+      CreateTensor(output_data, IntArrayFromInts(output_shape))},
+    runner{tflite::Register_FILL(),
+           tensors,
+           sizeof(tensors) / sizeof(TfLiteTensor),
+           IntArrayFromInts(inputs),
+           IntArrayFromInts(outputs),
+           /*builtin_data=*/nullptr,
+           micro_test::reporter} {}
+};
+
 template <typename DimsType, typename ValueType, typename OutputType>
 void TestFill(int* dims_shape, DimsType* dims_data,
               int* value_shape, ValueType* value_data,
               int* output_shape, OutputType* output_data) {
-  using namespace tflite::testing;
+  FillOp op{dims_shape, dims_data,
+            value_shape, value_data,
+            output_shape, output_data};
 
-  TfLiteTensor tensors[] = {
-      CreateTensor(dims_data, IntArrayFromInts(dims_shape)),
-      CreateTensor(value_data, IntArrayFromInts(value_shape)),
-      CreateTensor(output_data, IntArrayFromInts(output_shape))};
-  constexpr int dims_index = 0;
-  constexpr int value_index = 1;
-  constexpr int output_index = 2;
-  constexpr int inputs[] = {2, dims_index, value_index};
-  constexpr int outputs[] = {1, output_index};
-  tflite::micro::KernelRunner runner{tflite::Register_FILL(),
-                                     tensors,
-                                     sizeof(tensors) / sizeof(TfLiteTensor),
-                                     IntArrayFromInts(inputs),
-                                     IntArrayFromInts(outputs),
-                                     /*builtin_data=*/nullptr,
-                                     micro_test::reporter};
-
-  TF_LITE_MICRO_EXPECT_EQ(runner.InitAndPrepare(), kTfLiteOk);
-  TF_LITE_MICRO_EXPECT_EQ(runner.Invoke(), kTfLiteOk);
+  TF_LITE_MICRO_EXPECT_EQ(op.runner.InitAndPrepare(), kTfLiteOk);
+  TF_LITE_MICRO_EXPECT_EQ(op.runner.Invoke(), kTfLiteOk);
 
   // The output shape must match the shape requested via dims.
   const auto output_rank = output_shape[0];
@@ -60,8 +75,8 @@ void TestFill(int* dims_shape, DimsType* dims_data,
   }
 
   // The output type matches the value type.
-  TF_LITE_MICRO_EXPECT_EQ(tensors[output_index].type,
-                          tensors[value_index].type);
+  TF_LITE_MICRO_EXPECT_EQ(op.tensors[op.output_index].type,
+                          op.tensors[op.value_index].type);
 
   // The output elements contain the fill value.
   const auto elements = tflite::ElementCount(*IntArrayFromInts(output_shape));
@@ -74,26 +89,11 @@ template <typename DimsType, typename ValueType, typename OutputType>
 TfLiteStatus PrepareFill(int* dims_shape, DimsType* dims_data,
                          int* value_shape, ValueType* value_data,
                          int* output_shape, OutputType* output_data) {
-  using namespace tflite::testing;
+  FillOp op{dims_shape, dims_data,
+            value_shape, value_data,
+            output_shape, output_data};
 
-  TfLiteTensor tensors[] = {
-      CreateTensor(dims_data, IntArrayFromInts(dims_shape)),
-      CreateTensor(value_data, IntArrayFromInts(value_shape)),
-      CreateTensor(output_data, IntArrayFromInts(output_shape))};
-  constexpr int dims_index = 0;
-  constexpr int value_index = 1;
-  constexpr int output_index = 2;
-  constexpr int inputs[] = {2, dims_index, value_index};
-  constexpr int outputs[] = {1, output_index};
-  tflite::micro::KernelRunner runner{tflite::Register_FILL(),
-                                     tensors,
-                                     sizeof(tensors) / sizeof(TfLiteTensor),
-                                     IntArrayFromInts(inputs),
-                                     IntArrayFromInts(outputs),
-                                     /*builtin_data=*/nullptr,
-                                     micro_test::reporter};
-
-  return runner.InitAndPrepare();
+  return op.runner.InitAndPrepare();
 }
 
 }  // namespace anonymous
