@@ -52,6 +52,11 @@ organized into several pull requests (PRs) for ease of review and acceptance.
     not appear as a diff of the lite version. Instead, the files would simply
     appear at the destination path in their final form.
 
+    Even this copied, inactive code must pass CI's clang-format check prior to
+    merge, and unfortunately the version from lite is not always already
+    clang-formatted. Do clang-format it before submitting. This exception to
+    the copy-without-modifying directive is unavoidable and allowed.
+
 1.  **PR-4: Remove the bulk of lite-specific code from the files copied to
     micro in the previous step.**
     
@@ -114,9 +119,33 @@ organized into several pull requests (PRs) for ease of review and acceptance.
 [#45387]: https://github.com/tensorflow/tensorflow/issues/45387
 
 
-## General Porting Guidelines
+## General Guidelines
 
 TODO: Introduction
+
+Be sure to observe the [micro Contributing Guidelines][].
+
+[micro Contributing Guidelines]: https://github.com/tensorflow/tensorflow/blob/master/tensorflow/lite/micro/CONTRIBUTING.md
+
+### Check each commit for formatting, lint, and unit-test passage
+
+Check each commit against the [pre-submit checklist][] in the micro
+Contributing Guidelines. Specifically, make sure your code:
+
+1.  Is formatted with clang-format.
+1.  Passes a lint check.
+1.  Passes all unit tests.
+
+CI runs these checks on all PRs, and will hold up your PR if any of these checks fail.
+
+[pre-submit checklist]: https://github.com/tensorflow/tensorflow/blob/master/tensorflow/lite/micro/CONTRIBUTING.md#before-submitting-your-pr
+
+### Add yourself as an asignee to PRs
+
+Feel free to add yourself as an additional assignee to PRs which you submit.
+Other assignees may be set by the project's various bots.
+
+### Maintain a 1:1 correspondence between micro and lite versions of unit tests
 
 To the extent possible, maintain a 1:1 correspondence between micro and lite
 versions of unit tests. Avoid cleanup of merely stylistic issues, e.g., by
@@ -124,3 +153,9 @@ replacing the hardcoded literal `3.40282e+038` with
 `std::numeric_limits<float>::max()`. Any changes between the micro and lite
 versions of a test put a burden on future maintainers to figure out whether the
 differences are actually significant or just stylistic.
+
+### Sometimes CI checks on PRs are flakey and fail
+
+Sometimes CI checks on PRs don't fail because of the PRs contents, but because
+of some problem with the test infrastructure. Marking issues with the label
+`kokoro:force-run` causes the checks to be rerun.
