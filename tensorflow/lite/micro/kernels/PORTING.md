@@ -6,38 +6,62 @@ review and acceptance by the project.
 
 ## Step-by-step Guide
 
-The following steps outline the process of porting an op. The changes are
-organized into several pull requests (PRs) for ease of review and acceptance.
+The following steps outline the process of porting an op. The process results
+in several pull requests (PRs) for ease of review and acceptance.
 
-1.  **Search for GitHub issues titled with the name of the op to ensure a port
-    isn't already in progress.**
+1.  Search for GitHub issues titled with the name of the op to ensure a port
+    isn't already in progress.
 
-1.  **Open a GitHub issue to announce your intent and begin the record of your
-    work.**
+1.  Open a GitHub issue to announce your intent and begin the record of your
+    work.
 
-    A good prototype is [#45306][], *micro: port op FILL from lite*. Use your
-    issue to document the entire process of porting the op. Link
-    all constituent PRs (more below) to this issue. See
-    [this article][Providing Context] for background on documenting your work via bug
-    reports.
+    Document the entire process of porrting the op in this issue. Link
+    constituent PRs (more below) to this issue. See [this article][Providing
+    Context] for background on documenting your work via bug reports.
 
-1.  **PR-1: Extract a function for parsing the op out of the switch statement
-    in [ParseOpDataTfLite()][] in lite/core/api/flatbuffer_conversions.cc.**
+    A good prototype is issue [#45306][], *micro: port op FILL from lite*. 
 
-    Extract the parsing out of the switch statement in order to create a
-    standalone function which can be called later by the micro ops
-    resolver. A good example is PR [#45307][].
+1.  **PR-1**: Extract the code for parsing op parameters out of 
+    [ParseOpDataTfLite()][] in lite/core/api/flatbuffer_conversions.cc.
+
+    Extract the parsing of op parameters out of the switch statement in
+    [ParseOpDataTfLite()][] in *lite/core/api/flatbuffer_conversions.cc*, into
+    a standalone function which can be called by the micro op resolver in a
+    later PR.
+    
+    A simple example is PR [#45307][], and a more complicated example is PR
+    [#46021][].
 
     Run the lite test suite to test this change:
 
         bazel test tensorflow/lite/kernels:all
 
-1.  **PR-2: Extract the reference for the op in [reference_ops.h][] to a
-    standalone header.**
+1.  **PR-2**: Extract the reference for the op in [reference_ops.h][] to a
+    standalone header.
 
     Move the reference implementation of the op to a standalone header so that
-    micro can include it without including unrelated dependencies in
-    reference_ops.h. A good example is PR [#45311][].
+    micro can include it without including unrelated dependencies via
+    reference_ops.h.
+
+    A good example is PR [#45311][].
+
+    1.  Copy an existing header from
+        *tensorflow/lite/kernels/internal/reference/* to
+        *tensorflow/lite/kernels/internal/reference/<new_op.h>* to create the
+        boilerplate.
+
+    1.  Move the implementation from
+        *tensorflow/lite/kernels/internal/reference/reference_ops.h* to
+        *tensorflow/lite/kernels/internal/reference/<new_op.h>*.
+
+    1.  Add the new header to the build in
+        *tensorflow/lite/kernels/internal/BUILD* under *reference_base* and
+        *legacy_reference_base*. E.g., [for FILL][].
+
+        [for FILL]: https://github.com/tensorflow/tensorflow/pull/45311/commits/92f459e6b917fa5099ef5317d14c5100d33a86f0#diff-0b0fc9e1affece3c5a141ee9326f882876b6b958bc8b12a7c01d7540dc04983e
+
+    Do not clang-format existing code in *BUILD* or *reference_ops.h*, nor
+    modify it to satisfy cpplint.py.
 
     Run the lite test suite to test this change:
 
@@ -97,6 +121,7 @@ organized into several pull requests (PRs) for ease of review and acceptance.
 [#45457]: https://github.com/tensorflow/tensorflow/pull/45457
 [#45646]: https://github.com/tensorflow/tensorflow/pull/45646
 [#45647]: https://github.com/tensorflow/tensorflow/pull/45647
+[#46021]: https://github.com/tensorflow/tensorflow/pull/46021
 [Providing Context]: https://testing.googleblog.com/2017/09/code-health-providing-context-with.html
 [ParseOpDataTfLite()]: https://github.com/tensorflow/tensorflow/blob/d8394a6d774f5e3c02d97f1fc18ff445199db598/tensorflow/lite/core/api/flatbuffer_conversions.cc#L135
 [reference_ops.h]: https://github.com/tensorflow/tensorflow/blob/92f459e6b917fa5099ef5317d14c5100d33a86f0/tensorflow/lite/kernels/internal/reference/reference_ops.h
